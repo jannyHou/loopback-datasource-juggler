@@ -837,6 +837,81 @@ describe('Models attached to a dataSource', function() {
 
   });
 
+  context('replaceAttributes', function() {
+    it('should replace with new data', function(done) {
+      Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
+      function(err, post) {
+        if (err) return done(err);
+        post.replaceAttributes({title: 'b'}, function(err, p) {
+          if (err) return done(err);
+          p.id.should.equal(post.id);
+          should.not.exist(p._id);
+          p.title.should.equal('b');
+          should.not.exist(p.content);
+          should.not.exist(p.comments);
+          Post.findById(post.id, function(err, p) {
+            if (err) return done(err);
+            p.id.should.equal(post.id);
+            should.not.exist(p._id);
+            p.title.should.equal('b');
+            should.not.exist(p.content);
+            should.not.exist(p.comments);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  context('replaceOrCreate', function() {
+    it('should replace with new data', function(done) {
+      Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
+        function(err, post) {
+          if (err) return done(err);
+          post = post.toObject();
+          delete post.comments;
+          delete post.content;
+          post.title = 'b';
+          Post.replaceOrCreate(post, function(err, p) {
+            if (err) return done(err);
+            p.id.should.equal(post.id);
+            should.not.exist(p._id);
+            p.title.should.equal('b');        
+            should.not.exist(p.content);
+            should.not.exist(p.comments);
+            Post.findById(post.id, function(err, p) {
+              if (err) return done(err);
+              p.id.should.equal(post.id);
+              should.not.exist(p._id);
+              p.title.should.equal('b');
+              should.not.exist(p.content);
+              should.not.exist(p.comments);
+              done();
+            });
+          });
+        });
+    });
+
+    it('should create a new instance if it does not exist', function(done) {
+      var post = {id: 123, title: 'a', content: 'AAA'};
+      Post.replaceOrCreate(post, function(err, p) {
+        if (err) return done(err);
+        p.id.should.equal(post.id);
+        should.not.exist(p._id);
+        p.title.should.equal(post.title);
+        p.content.should.equal(post.content);
+        Post.findById(p.id, function(err, p) {
+          if (err) return done(err);
+          p.id.should.equal(post.id);
+          should.not.exist(p._id);
+          p.title.should.equal(post.title);
+          p.content.should.equal(post.content);
+          done();
+        });
+      });
+    });
+  });
+  
   it('save should update the instance with the same id', function (done) {
     Post.create({title: 'a', content: 'AAA'}, function (err, post) {
       post.title = 'b';

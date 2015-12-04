@@ -1374,6 +1374,90 @@ module.exports = function(dataSource, should) {
         });
       });
     });
+    
+    describe('PersistedModel.prototype.replace', function() {
+      it('triggers hooks in the correct order', function(done) {
+        monitorHookExecution();
+
+        existingInstance.replaceAttributes(
+          { name: 'replaced' },
+          function(err, record, created) {
+            if (err) return done(err);
+            triggered.should.eql([
+              'before save',
+              'persist',
+              'loaded',
+              'after save'
+            ]);
+            done();
+          });
+      });
+
+      it('aborts when `before save` hook fails', function(done) {
+        TestModel.observe('before save', nextWithError(expectedError));
+
+        existingInstance.replaceAttributes({ name: 'replaced' }, function(err) {
+          [err].should.eql([expectedError]);
+          done();
+        });
+      });
+
+      it('triggers `persist` hook', function(done) {
+        TestModel.observe('persist', pushContextAndNext());
+        existingInstance.replaceAttributes({ name: 'replacedName' }, function(err) {
+          if (err) return done(err);
+
+          observedContexts.should.eql(aTestModelCtx({
+            where: { id: existingInstance.id },
+            data: { name: 'replacedName' },
+            currentInstance: {
+              id: existingInstance.id,
+              name: 'replacedName',
+              extra: null
+            }
+          }));
+
+          done();
+        });
+      });
+
+      it('emits error when `loaded` hook fails', function(done) {
+        TestModel.observe('loaded', nextWithError(expectedError));
+        existingInstance.replaceAttributes(
+          { name: 'replaced' },
+          function(err, instance) {
+            [err].should.eql([expectedError]);
+            done();
+          });
+      });
+
+      it('triggers `after save` hook', function(done) {
+        TestModel.observe('after save', pushContextAndNext());
+
+        existingInstance.name = 'replaced';
+        existingInstance.replaceAttributes({ name: 'replaced' }, function(err) {
+          if (err) return done(err);
+          observedContexts.should.eql(aTestModelCtx({
+            instance: {
+              id: existingInstance.id,
+              name: 'replaced',
+              extra: undefined
+            },
+            isNewInstance: false
+          }));
+          done();
+        });
+      });
+
+      it('aborts when `after save` hook fails', function(done) {
+        TestModel.observe('after save', nextWithError(expectedError));
+
+        existingInstance.replaceAttributes({ name: 'replaced' }, function(err) {
+          [err].should.eql([expectedError]);
+          done();
+        });
+      });
+    });
 
     describe('PersistedModel.updateOrCreate', function() {
       it('triggers hooks in the correct order on create', function(done) {
@@ -1823,6 +1907,109 @@ module.exports = function(dataSource, should) {
               },
               isNewInstance: true
             }));
+            done();
+          });
+      });
+    });
+
+    describe('PersistedModel.replaceOrCreate', function() {
+      it('triggers hooks in the correct order on create', function(done) {
+        monitorHookExecution();
+
+        TestModel.replaceOrCreate(
+          { id: 'not-found', name: 'not found' },
+          function(err, record, created) {
+            if (err) return done(err);
+            triggered.should.eql([
+              'access',
+              'before save',
+              'persist',
+              'loaded',
+              'after save'
+            ]);
+            done();
+          });
+      });
+
+      it('triggers hooks in the correct order on replace', function(done) {
+        monitorHookExecution();
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'new name' },
+          function(err, record, created) {
+            if (err) return done(err);
+            if (dataSource.connector.replaceOrCreate) {
+              triggered.should.eql([
+                'access',
+                'before save',
+                'persist',
+                'loaded',
+                'after save'
+              ]); 
+            } else {
+              triggered.should.eql([
+                'access',
+                'loaded',
+                'before save',
+                'persist',
+                'loaded',
+                'after save'
+              ]);
+            };
+            // TODO: Check order if not implemented in the connector...
+            done();
+          });
+      });
+
+      it('triggers `access` hook', function(done) {
+        TestModel.observe('before save', pushContextAndNext());
+        TestModel.replaceOrCreate({id: existingInstance.id, name: 'new name'},
+        function(err, instance) {
+          if (err)
+            return done(err);
+          observedContexts.should.eql(aTestModelCtx({
+            instance: instance
+          }));
+          done();
+        });
+      });
+
+      it('triggers `access` hook on create', function(done) {
+        TestModel.observe('access', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: 'not-found', name: 'not found' },
+          function(err, instance) {
+            if (err) return done(err);
+            observedContexts.should.eql(aTestModelCtx({ query: {
+              where: { id: 'not-found' }
+            }}));
+            done();
+          });
+      });
+
+      it('triggers `access` hook on replace', function(done) {
+        TestModel.observe('access', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            observedContexts.should.eql(aTestModelCtx({ query: {
+              where: { id: existingInstance.id }
+            }}));
+            done();
+          });
+      });
+
+      it('does not trigger `access` on missing id', function(done) {
+        TestModel.observe('access', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            observedContexts.should.equal('hook not called');
             done();
           });
       });
