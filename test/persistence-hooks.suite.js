@@ -1375,7 +1375,7 @@ module.exports = function(dataSource, should) {
       });
     });
     
-    describe('PersistedModel.prototype.replace', function() {
+    describe('PersistedModel.prototype.replaceAttributes', function() {
       it('triggers hooks in the correct order', function(done) {
         monitorHookExecution();
 

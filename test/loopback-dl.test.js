@@ -845,17 +845,17 @@ describe('Models attached to a dataSource', function() {
         post.replaceAttributes({title: 'b'}, function(err, p) {
           if (err) return done(err);
           p.id.should.equal(post.id);
-          should.not.exist(p._id);
+          p.should.not.have.property('_id');
           p.title.should.equal('b');
-          should.not.exist(p.content);
-          should.not.exist(p.comments);
+          p.should.not.have.property('content');
+          p.should.not.have.property('comments');
           Post.findById(post.id, function(err, p) {
             if (err) return done(err);
             p.id.should.equal(post.id);
-            should.not.exist(p._id);
+            p.should.not.have.property('_id');
             p.title.should.equal('b');
-            should.not.exist(p.content);
-            should.not.exist(p.comments);
+            p.should.not.have.property('content');
+            p.should.not.have.property('comments');
             done();
           });
         });
@@ -875,17 +875,17 @@ describe('Models attached to a dataSource', function() {
           Post.replaceOrCreate(post, function(err, p) {
             if (err) return done(err);
             p.id.should.equal(post.id);
-            should.not.exist(p._id);
-            p.title.should.equal('b');        
-            should.not.exist(p.content);
-            should.not.exist(p.comments);
+            p.should.not.have.property('_id');
+            p.title.should.equal('b');
+            p.should.not.have.property('content');
+            p.should.not.have.property('comments');
             Post.findById(post.id, function(err, p) {
               if (err) return done(err);
               p.id.should.equal(post.id);
-              should.not.exist(p._id);
+              p.should.not.have.property('_id');
               p.title.should.equal('b');
-              should.not.exist(p.content);
-              should.not.exist(p.comments);
+              p.should.not.have.property('content');
+              p.should.not.have.property('comments');
               done();
             });
           });
@@ -897,13 +897,13 @@ describe('Models attached to a dataSource', function() {
       Post.replaceOrCreate(post, function(err, p) {
         if (err) return done(err);
         p.id.should.equal(post.id);
-        should.not.exist(p._id);
+        p.should.not.have.property('_id');
         p.title.should.equal(post.title);
         p.content.should.equal(post.content);
         Post.findById(p.id, function(err, p) {
           if (err) return done(err);
           p.id.should.equal(post.id);
-          should.not.exist(p._id);
+          p.should.not.have.property('_id');
           p.title.should.equal(post.title);
           p.content.should.equal(post.content);
           done();
