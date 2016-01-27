@@ -1956,7 +1956,6 @@ module.exports = function(dataSource, should) {
                 'after save'
               ]);
             };
-            // TODO: Check order if not implemented in the connector...
             done();
           });
       });
