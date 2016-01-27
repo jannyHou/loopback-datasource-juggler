@@ -854,8 +854,8 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
-            p.should.not.have.property('content');
-            p.should.not.have.property('comments');
+            should.not.exist(p.content);
+            should.not.exist(p.comments);
             done();
           });
         });
@@ -877,15 +877,15 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
-            p.should.not.have.property('content');
-            p.should.not.have.property('comments');
+            should.not.exist(p.content);
+            should.not.exist(p.comments);
             Post.findById(post.id, function(err, p) {
               if (err) return done(err);
               p.id.should.equal(post.id);
               p.should.not.have.property('_id');
               p.title.should.equal('b');
-              p.should.not.have.property('content');
-              p.should.not.have.property('comments');
+              should.not.exist(p.content);
+              should.not.exist(p.comments);
               done();
             });
           });
