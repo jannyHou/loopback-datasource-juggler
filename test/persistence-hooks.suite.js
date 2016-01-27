@@ -1409,7 +1409,10 @@ module.exports = function(dataSource, should) {
 
           observedContexts.should.eql(aTestModelCtx({
             where: { id: existingInstance.id },
-            data: { name: 'replacedName' },
+            data: {
+              name: 'replacedName',
+              id: existingInstance.id
+            },
             currentInstance: {
               id: existingInstance.id,
               name: 'replacedName',
