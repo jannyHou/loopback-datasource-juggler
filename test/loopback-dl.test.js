@@ -864,7 +864,7 @@ describe('Models attached to a dataSource', function() {
   });
 
   context('replaceOrCreate', function() {
-    it.only('should replace with new data', function(done) {
+    it('should replace with new data', function(done) {
       Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
         function(err, post) {
           if (err) return done(err);
