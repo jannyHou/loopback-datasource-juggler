@@ -2211,7 +2211,127 @@ module.exports = function(dataSource, should) {
             done();
           });
       });
+
+      it('triggers `loaded` hook on create', function(done) {
+        TestModel.observe('loaded', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'a name' },
+          function(err, instance) {
+            if (err) return done(err);
+
+            if (dataSource.connector.replaceOrCreate) {
+              observedContexts.should.eql(aTestModelCtx({
+                data: { 
+                  id: 'new-id',
+                  name: 'a name'
+                },
+                isNewInstance: true,
+              }));
+            } else {
+              observedContexts.should.eql(aTestModelCtx({
+                data: {
+                  id: 'new-id',
+                  name: 'a name'
+                },
+                isNewInstance: true
+              }));
+            }
+            done();
+          });
+      });
+
+      it('triggers `loaded` hook on replace', function(done) {
+        TestModel.observe('loaded', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'replaced name' },
+          function(err, instance) {
+            if (err) return done(err);
+
+            if (dataSource.connector.replaceOrCreate) {
+              observedContexts.should.eql(aTestModelCtx({
+                data: {
+                  id: existingInstance.id,
+                  name: 'replaced name'
+                },
+                isNewInstance: false
+              }));
+            } else {
+              // For Unoptimized (non-atomic) connector, the callback
+              // function `pushContextAndNext` is called twice.
+              // As a result, observedContexts returns an array and
+              // NOT a single instance.
+              observedContexts.should.eql([
+                aTestModelCtx({
+                  data: {
+                    id: existingInstance.id,
+                    name: 'first'
+                  },
+                  isNewInstance: false,
+                  options: { notify: false }
+                }),
+                aTestModelCtx({
+                  data: {
+                    id: existingInstance.id,
+                    name: 'replaced name'
+                  },
+                  isNewInstance: false
+                })
+              ]);
+            }
+            done();
+          });
+      });
       
+      it('emits error when `loaded` hook fails', function(done) {
+        TestModel.observe('loaded', nextWithError(expectedError));
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'a name' },
+          function(err, instance) {
+            [err].should.eql([expectedError]);
+            done();
+          });
+      });      
+      
+      it('triggers `after save` hook on replace', function(done) {
+        TestModel.observe('after save', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'replaced name' },
+          function(err, instance) {
+            if (err) return done(err);
+            observedContexts.should.eql(aTestModelCtx({
+              instance: {
+                id: existingInstance.id,
+                name: 'replaced name',
+                extra: undefined
+              },
+              isNewInstance: false
+            }));
+            done();
+          });
+      });
+      
+      it.only('triggers `after save` hook on create', function(done) {
+        TestModel.observe('after save', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'a name' },
+          function(err, instance) {
+            if (err) return done(err);
+            observedContexts.should.eql(aTestModelCtx({
+              instance: {
+                id: instance.id,
+                name: 'a name',
+                extra: undefined
+              },
+              isNewInstance: true
+            }));
+            done();
+          });
+      });      
+
     });
 
     describe('PersistedModel.deleteAll', function() {
