@@ -1963,19 +1963,6 @@ module.exports = function(dataSource, should) {
           });
       });
 
-      it('triggers `access` hook', function(done) {
-        TestModel.observe('before save', pushContextAndNext());
-        TestModel.replaceOrCreate({id: existingInstance.id, name: 'new name'},
-        function(err, instance) {
-          if (err)
-            return done(err);
-          observedContexts.should.eql(aTestModelCtx({
-            instance: instance
-          }));
-          done();
-        });
-      });
-
       it('triggers `access` hook on create', function(done) {
         TestModel.observe('access', pushContextAndNext());
 
@@ -2015,6 +2002,166 @@ module.exports = function(dataSource, should) {
             done();
           });
       });
+
+      it('applies updates from `access` hook when found', function(done) {
+        TestModel.observe('access', function(ctx, next) {
+          ctx.query = { where: { id: { neq: existingInstance.id } } };
+          next();
+        });
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            findTestModels({ fields: ['id', 'name' ] }, function(err, list) {
+              if (err) return done(err);
+              (list||[]).map(toObject).should.eql([
+                { id: existingInstance.id, name: existingInstance.name, extra: undefined },
+                { id: instance.id, name: 'new name', extra: undefined }
+              ]);
+              done();
+            });
+        });
+      });
+
+      it('applies updates from `access` hook when not found', function(done) {
+        TestModel.observe('access', function(ctx, next) {
+          ctx.query = { where: { id: 'not-found' } };
+          next();
+        });
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            findTestModels({ fields: ['id', 'name' ] }, function(err, list) {
+              if (err) return done(err);
+              (list||[]).map(toObject).should.eql([
+                { id: existingInstance.id, name: existingInstance.name, extra: undefined },
+                { id: list[1].id, name: 'second', extra: undefined },
+                { id: instance.id, name: 'new name', extra: undefined }
+              ]);
+              done();
+            });
+        });
+      });
+
+      it('triggers hooks only once', function(done) {
+        TestModel.observe('access', pushNameAndNext('access'));
+        TestModel.observe('before save', pushNameAndNext('before save'));
+
+        TestModel.observe('access', function(ctx, next) {
+          ctx.query = { where: { id: { neq: existingInstance.id } } };
+          next();
+        });
+
+        TestModel.replaceOrCreate(
+          { id: 'ignored', name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            observersCalled.should.eql(['access', 'before save']);
+            done();
+          });
+      });
+      
+      it('triggers `before save` hook on replace', function(done) {
+        TestModel.observe('before save', pushContextAndNext());
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'replaced name' },
+          function(err, instance) {
+            if (err) return done(err);
+            if (dataSource.connector.replaceOrCreate) {
+              // Atomic implementations of `replaceOrCreate`
+              observedContexts.should.eql(aTestModelCtx({
+                instance: {
+                  id: existingInstance.id,
+                  name: 'replaced name',
+                  extra: undefined
+                }
+              }));
+            } else {
+              // non-atomic implementation of `replaceOrCreate`
+              // will use `prototype.replaceAttributes` internally
+              observedContexts.should.eql(aTestModelCtx({
+                instance: {
+                  id: existingInstance.id,
+                  name: 'replaced name',
+                  extra: undefined
+                }
+              }));
+            }
+            done();
+          });
+      });
+      
+      it('triggers `before save` hook on create', function(done) {
+        TestModel.observe('before save', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'a name' },
+          function(err, instance) {
+            if (err) return done(err);
+
+            if (dataSource.connector.replaceOrCreate) {
+              // Atomic implementations of `replaceOrCreate`
+              observedContexts.should.eql(aTestModelCtx({
+                instance: {
+                  id: 'new-id',
+                  name: 'a name',
+                  extra: undefined
+                }
+              }));
+            } else {
+              // non-atomic implementation of `replaceOrCreate`
+              // will use `instance.save`
+              observedContexts.should.eql(aTestModelCtx({
+                instance: { id: 'new-id', name: 'a name', extra: undefined },
+                isNewInstance: true
+              }));
+            }
+            done();
+          });
+      });
+      
+      it('applies updates from `before save` hook on create', function(done) {
+        TestModel.observe('before save', function(ctx, next) {
+          ctx.instance.name = 'hooked';
+          next();
+        });
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'new name' },
+          function(err, instance) {
+            if (err) return done(err);
+            instance.name.should.equal('hooked');
+            done();
+          });
+      });
+
+      it('validates model after `before save` hook on replace', function(done) {
+        TestModel.observe('before save', invalidateTestModel());
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'replaced name' },
+          function(err, instance) {
+            (err || {}).should.be.instanceOf(ValidationError);
+            (err.details.codes || {}).should.eql({ name: ['presence'] });
+            done();
+          });
+      });
+      
+      it('validates model after `before save` hook on create', function(done) {
+        TestModel.observe('before save', invalidateTestModel());
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'new name' },
+          function(err, instance) {
+            (err || {}).should.be.instanceOf(ValidationError);
+            (err.details.codes || {}).should.eql({ name: ['presence'] });
+            done();
+          });
+      });
+      
     });
 
     describe('PersistedModel.deleteAll', function() {
