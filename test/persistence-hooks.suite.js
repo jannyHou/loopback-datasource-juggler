@@ -2137,18 +2137,6 @@ module.exports = function(dataSource, should) {
             done();
           });
       });
-
-      it('validates model after `before save` hook on replace', function(done) {
-        TestModel.observe('before save', invalidateTestModel());
-
-        TestModel.replaceOrCreate(
-          { id: existingInstance.id, name: 'replaced name' },
-          function(err, instance) {
-            (err || {}).should.be.instanceOf(ValidationError);
-            (err.details.codes || {}).should.eql({ name: ['presence'] });
-            done();
-          });
-      });
       
       it('validates model after `before save` hook on create', function(done) {
         TestModel.observe('before save', invalidateTestModel());
@@ -2158,6 +2146,68 @@ module.exports = function(dataSource, should) {
           function(err, instance) {
             (err || {}).should.be.instanceOf(ValidationError);
             (err.details.codes || {}).should.eql({ name: ['presence'] });
+            done();
+          });
+      });
+      
+      it('triggers `persist` hook on create', function(done) {
+        TestModel.observe('persist', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: 'new-id', name: 'a name' },
+          function(err, instance) {
+            if (err) return done(err);
+
+            if (dataSource.connector.replaceOrCreate) {
+              observedContexts.should.eql(aTestModelCtx({
+                where: { id: 'new-id' },
+                data: { id: 'new-id', name: 'a name' },
+                currentInstance: {
+                  id: 'new-id',
+                  name: 'a name',
+                  extra: undefined
+                }
+              }));
+            } else {
+              observedContexts.should.eql(aTestModelCtx({
+                data: {
+                  id: 'new-id',
+                  name: 'a name'
+                },
+                isNewInstance: true,
+                currentInstance: {
+                  id: 'new-id',
+                  name: 'a name',
+                  extra: undefined
+                }
+              }));
+            }
+            done();
+          });
+      });
+
+      it('triggers `persist` hook on replace', function(done) {
+        TestModel.observe('persist', pushContextAndNext());
+
+        TestModel.replaceOrCreate(
+          { id: existingInstance.id, name: 'replaced name' },
+          function(err, instance) {
+            if (err) return done(err);
+
+            var expectedContext = aTestModelCtx({
+              where: { id: existingInstance.id },
+              data: {
+                id: existingInstance.id,
+                name: 'replaced name'
+              },
+              currentInstance: {
+                id: existingInstance.id,
+                name: 'replaced name',
+                extra: undefined
+              }
+            });
+
+            observedContexts.should.eql(expectedContext);
             done();
           });
       });

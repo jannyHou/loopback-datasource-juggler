@@ -877,8 +877,8 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
-            p.should.have.property('content', undefined);
-            p.should.have.property('comments', undefined);
+            p.should.not.have.property(p.content);
+            p.should.not.have.property(p.comments);
             Post.findById(post.id, function(err, p) {
               if (err) return done(err);
               p.id.should.equal(post.id);
