@@ -854,6 +854,8 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
+            // should.equal(p.content, undefined);
+            // should.equal(p.comments, undefined);
             should.not.exist(p.content);
             should.not.exist(p.comments);
             done();
