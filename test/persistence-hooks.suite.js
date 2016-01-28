@@ -1393,6 +1393,22 @@ module.exports = function(dataSource, should) {
           });
       });
 
+      it('triggers `before save` hook', function(done) {
+        TestModel.observe('before save', pushContextAndNext());
+
+        existingInstance.replaceAttributes({ name: 'changed' }, function(err) {
+          if (err) return done(err);
+          observedContexts.should.eql(aTestModelCtx({
+            instance: {
+              id: existingInstance.id,
+              name: 'changed',
+              extra: undefined
+            }
+          }));
+          done();
+        });
+      });
+
       it('aborts when `before save` hook fails', function(done) {
         TestModel.observe('before save', nextWithError(expectedError));
 
@@ -1401,6 +1417,36 @@ module.exports = function(dataSource, should) {
           done();
         });
       });
+
+      it.skip('applies updates from `before save` hook', function(done) {
+        /* Should they be able to change `instance` in `before save`? I was completely on the wrong track? :(
+         * in line [1] data is over writting instance!
+         * Also in line [2] I was copying `data` to `inst`
+         * Could you please clarify if in `before save` for `replaceAttributes` they are allowed to change instance? 
+         * 
+         * [1]:https://github.com/strongloop/loopback-datasource-juggler/pull/788/files#diff-d717a01e40d8164976e4468af1bce663R2678
+         * [2]:https://github.com/strongloop/loopback-datasource-juggler/pull/788/files#diff-d717a01e40d8164976e4468af1bce663R2707
+        */
+
+        TestModel.observe('before save', function(ctx, next) {
+          ctx.instance.name = 'hooked';
+          next();
+        });
+
+        existingInstance.replaceAttributes({ name: 'updated' }, function(err) {
+          if (err) return done(err);
+          TestModel.findById(existingInstance.id, function(err, instance) {
+            if (err) return done(err);
+            should.exists(instance);
+            instance.toObject(true).should.eql({
+              id: existingInstance.id,
+              name: 'hooked',
+              extra: undefined
+            });
+            done();
+          });
+        });
+      });      
 
       it('triggers `persist` hook', function(done) {
         TestModel.observe('persist', pushContextAndNext());
@@ -2313,7 +2359,7 @@ module.exports = function(dataSource, should) {
           });
       });
       
-      it.only('triggers `after save` hook on create', function(done) {
+      it('triggers `after save` hook on create', function(done) {
         TestModel.observe('after save', pushContextAndNext());
 
         TestModel.replaceOrCreate(
