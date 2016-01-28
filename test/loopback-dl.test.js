@@ -854,10 +854,8 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
-            // should.equal(p.content, undefined);
-            // should.equal(p.comments, undefined);
-            should.not.exist(p.content);
-            should.not.exist(p.comments);
+            p.should.have.property('content', undefined);
+            p.should.have.property('comments', undefined);
             done();
           });
         });
@@ -866,7 +864,7 @@ describe('Models attached to a dataSource', function() {
   });
 
   context('replaceOrCreate', function() {
-    it('should replace with new data', function(done) {
+    it.only('should replace with new data', function(done) {
       Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
         function(err, post) {
           if (err) return done(err);
@@ -879,15 +877,15 @@ describe('Models attached to a dataSource', function() {
             p.id.should.equal(post.id);
             p.should.not.have.property('_id');
             p.title.should.equal('b');
-            should.not.exist(p.content);
-            should.not.exist(p.comments);
+            p.should.have.property('content', undefined);
+            p.should.have.property('comments', undefined);
             Post.findById(post.id, function(err, p) {
               if (err) return done(err);
               p.id.should.equal(post.id);
               p.should.not.have.property('_id');
               p.title.should.equal('b');
-              should.not.exist(p.content);
-              should.not.exist(p.comments);
+              p.should.have.property('content', undefined);
+              p.should.have.property('comments', undefined);
               done();
             });
           });
