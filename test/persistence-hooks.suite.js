@@ -1597,6 +1597,20 @@ module.exports = function(dataSource, should) {
           done();
         });
       });
+
+      it('applies updates from `after save` hook', function(done) {
+        TestModel.observe('after save', function(ctx, next) {
+          ctx.instance.should.be.instanceOf(TestModel);
+          ctx.instance.extra = 'hook data';
+          next();
+        });
+
+        existingInstance.replaceAttributes({ name: 'updated' }, function(err, instance) {
+          if (err) return done(err);
+          instance.should.have.property('extra', 'hook data');
+          done();
+        });
+      });      
     });
 
     describe('PersistedModel.updateOrCreate', function() {
