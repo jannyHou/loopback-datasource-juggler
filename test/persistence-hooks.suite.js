@@ -1469,6 +1469,85 @@ module.exports = function(dataSource, should) {
           done();
         });
       });
+      
+      it('applies updates from `persist` hook', function(done) {
+        TestModel.observe('persist', pushContextAndNext(function(ctx){
+          ctx.data.extra = 'hook data';
+        }));
+
+        existingInstance.replaceAttributes({ name: 'changed' }, function(err, instance) {
+          if (err) return done(err);
+          instance.should.have.property('extra', 'hook data');
+          done();
+        });
+      });      
+
+      it('applies updates from `persist` hook - for nested model instance', function(done) {
+        var Address = dataSource.createModel('NestedAddress', {
+          id: { type: String, id: true, default: 1 },
+          city: { type: String, required: true },
+          country: { type: String, required: true }
+        });
+
+        var User = dataSource.createModel('UserWithAddress', {
+          id: { type: String, id: true, default: uid() },
+          name: { type: String, required: true },
+          address: {type: Address, required: false},
+          extra: {type: String}
+        });
+
+        dataSource.automigrate(['UserWithAddress', 'NestedAddress'], function(err) {
+          if (err) return done(err);
+          User.create({name: 'Joe'}, function(err, instance) {
+            if (err) return done(err);
+
+            var existingUser = instance;
+
+            User.observe('persist', pushContextAndNext(function(ctx) {
+              should.exist(ctx.data.address)
+              ctx.data.address.should.be.type('object');
+              ctx.data.address.should.not.be.instanceOf(Address);
+
+              ctx.data.extra = 'hook data';
+            }));
+
+            existingUser.replaceAttributes(
+              {name: 'John', address: new Address({city: 'Springfield', country: 'USA'})},
+              function(err, inst) {
+                if (err) return done(err);
+
+                inst.should.have.property('extra', 'hook data');
+
+                User.findById(existingUser.id, function(err, dbInstance) {
+                  if (err) return done(err);
+                  dbInstance.toObject(true).should.eql({
+                    id: existingUser.id,
+                    name: 'John',
+                    address: {id: '1', city: 'Springfield', country: 'USA'},
+                    extra: 'hook data'
+                  });
+                  done();
+                });
+              });
+          });
+        });
+      });
+
+      it('triggers `loaded` hook', function(done) {
+        TestModel.observe('loaded', pushContextAndNext());
+        existingInstance.replaceAttributes({ name: 'changed' }, function(err, data) {
+          if (err) return done(err);
+
+          observedContexts.should.eql(aTestModelCtx({
+            data: { 
+              name: 'changed',
+              id: data.id
+            },
+            isNewInstance : false
+          }));
+          done();
+        });
+      });
 
       it('emits error when `loaded` hook fails', function(done) {
         TestModel.observe('loaded', nextWithError(expectedError));
@@ -1479,6 +1558,18 @@ module.exports = function(dataSource, should) {
             done();
           });
       });
+
+      it('applies updates from `loaded` hook updateAttributes', function(done) {
+        TestModel.observe('loaded', pushContextAndNext(function(ctx){
+          ctx.data.name = 'changed2';
+        }));
+
+        existingInstance.replaceAttributes({ name: 'changed' }, function(err, instance) {
+          if (err) return done(err);
+          instance.should.have.property('name', 'changed2');
+          done();
+        });
+      });      
 
       it('triggers `after save` hook', function(done) {
         TestModel.observe('after save', pushContextAndNext());
