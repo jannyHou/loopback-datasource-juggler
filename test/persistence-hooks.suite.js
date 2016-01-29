@@ -2481,8 +2481,7 @@ module.exports = function(dataSource, should) {
             }));
             done();
           });
-      });      
-
+      });
     });
 
     describe('PersistedModel.deleteAll', function() {
