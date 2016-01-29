@@ -2254,7 +2254,7 @@ module.exports = function(dataSource, should) {
               }));
             } else {
               // non-atomic implementation of `replaceOrCreate`
-              // will use `prototype.replaceAttributes` internally
+              // will use `prototype.replaceById` internally
               observedContexts.should.eql(aTestModelCtx({
                 instance: {
                   id: existingInstance.id,
