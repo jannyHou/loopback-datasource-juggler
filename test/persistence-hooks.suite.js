@@ -1464,7 +1464,8 @@ module.exports = function(dataSource, should) {
               id: existingInstance.id,
               name: 'replacedName',
               extra: null
-            }
+            },
+            isNewInstance: false
           }));
 
           done();
@@ -2366,8 +2367,8 @@ module.exports = function(dataSource, should) {
           { id: existingInstance.id, name: 'replaced name' },
           function(err, instance) {
             if (err) return done(err);
-
-            var expectedContext = aTestModelCtx({
+            
+            var expected = {
               where: { id: existingInstance.id },
               data: {
                 id: existingInstance.id,
@@ -2378,7 +2379,15 @@ module.exports = function(dataSource, should) {
                 name: 'replaced name',
                 extra: undefined
               }
-            });
+            };
+
+            var expectedContext;
+            if (dataSource.connector.replaceOrCreate) {
+              expectedContext = aTestModelCtx(expected);
+            } else {
+              expected.isNewInstance = false;
+              expectedContext = aTestModelCtx(expected);       
+          }
 
             observedContexts.should.eql(expectedContext);
             done();
@@ -2392,24 +2401,13 @@ module.exports = function(dataSource, should) {
           { id: 'new-id', name: 'a name' },
           function(err, instance) {
             if (err) return done(err);
-
-            if (dataSource.connector.replaceOrCreate) {
-              observedContexts.should.eql(aTestModelCtx({
-                data: { 
-                  id: 'new-id',
-                  name: 'a name'
-                },
-                isNewInstance: true,
-              }));
-            } else {
-              observedContexts.should.eql(aTestModelCtx({
-                data: {
-                  id: 'new-id',
-                  name: 'a name'
-                },
-                isNewInstance: true
-              }));
-            }
+            observedContexts.should.eql(aTestModelCtx({
+              data: {
+                id: 'new-id',
+                name: 'a name'
+              },
+              isNewInstance: true
+            }));     
             done();
           });
       });
