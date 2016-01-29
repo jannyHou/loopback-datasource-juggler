@@ -1402,8 +1402,9 @@ module.exports = function(dataSource, should) {
             instance: {
               id: existingInstance.id,
               name: 'changed',
-              extra: undefined
-            }
+              extra: undefined,              
+            },
+            isNewInstance: false
           }));
           done();
         });
@@ -2215,6 +2216,26 @@ module.exports = function(dataSource, should) {
           });
       });
       
+      it('triggers `before save` hook', function(done) {
+        TestModel.observe('before save', pushContextAndNext());
+        TestModel.replaceOrCreate({id: existingInstance.id, name: 'new name'},
+        function(err, instance) {
+          if (err)
+            return done(err);
+          if (dataSource.connector.replaceOrCreate) {
+            observedContexts.should.eql(aTestModelCtx({
+              instance: instance
+            }));
+          } else {
+            observedContexts.should.eql(aTestModelCtx({
+              instance: instance,
+              isNewInstance: false
+            }));
+          }
+          done();
+        });
+      });      
+      
       it('triggers `before save` hook on replace', function(done) {
         TestModel.observe('before save', pushContextAndNext());
         TestModel.replaceOrCreate(
@@ -2238,7 +2259,8 @@ module.exports = function(dataSource, should) {
                   id: existingInstance.id,
                   name: 'replaced name',
                   extra: undefined
-                }
+                },
+                isNewInstance: false
               }));
             }
             done();
