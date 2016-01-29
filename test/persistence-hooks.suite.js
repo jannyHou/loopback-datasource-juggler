@@ -1559,14 +1559,14 @@ module.exports = function(dataSource, should) {
           });
       });
 
-      it('applies updates from `loaded` hook updateAttributes', function(done) {
+      it('applies updates from `loaded` hook replaceAttributes', function(done) {
         TestModel.observe('loaded', pushContextAndNext(function(ctx){
-          ctx.data.name = 'changed2';
+          ctx.data.name = 'changed in hook';
         }));
 
         existingInstance.replaceAttributes({ name: 'changed' }, function(err, instance) {
           if (err) return done(err);
-          instance.should.have.property('name', 'changed2');
+          instance.should.have.property('name', 'changed in hook');
           done();
         });
       });      
