@@ -2243,27 +2243,20 @@ module.exports = function(dataSource, should) {
           { id: existingInstance.id, name: 'replaced name' },
           function(err, instance) {
             if (err) return done(err);
-            if (dataSource.connector.replaceOrCreate) {
-              // Atomic implementations of `replaceOrCreate`
-              observedContexts.should.eql(aTestModelCtx({
-                instance: {
-                  id: existingInstance.id,
-                  name: 'replaced name',
-                  extra: undefined
-                }
-              }));
-            } else {
-              // non-atomic implementation of `replaceOrCreate`
-              // will use `replaceById` internally
-              observedContexts.should.eql(aTestModelCtx({
-                instance: {
-                  id: existingInstance.id,
-                  name: 'replaced name',
-                  extra: undefined
-                },
-                isNewInstance: false
-              }));
+      
+            var expectedContext = aTestModelCtx({
+              instance: {
+                id: existingInstance.id,
+                name: 'replaced name',
+                extra: undefined
+              }
+            });
+
+            if (!dataSource.connector.replaceOrCreate) {
+              expectedContext.isNewInstance = false;
             }
+            observedContexts.should.eql(expectedContext);
+
             done();
           });
       });
@@ -2276,23 +2269,19 @@ module.exports = function(dataSource, should) {
           function(err, instance) {
             if (err) return done(err);
 
-            if (dataSource.connector.replaceOrCreate) {
-              // Atomic implementations of `replaceOrCreate`
-              observedContexts.should.eql(aTestModelCtx({
-                instance: {
-                  id: 'new-id',
-                  name: 'a name',
-                  extra: undefined
-                }
-              }));
-            } else {
-              // non-atomic implementation of `replaceOrCreate`
-              // will use `instance.save`
-              observedContexts.should.eql(aTestModelCtx({
-                instance: { id: 'new-id', name: 'a name', extra: undefined },
-                isNewInstance: true
-              }));
+            var expectedContext = aTestModelCtx({
+              instance: {
+                id: 'new-id',
+                name: 'a name',
+                extra: undefined
+              }
+            });
+
+            if (!dataSource.connector.replaceOrCreate) {
+              expectedContext.isNewInstance = true;
             }
+            observedContexts.should.eql(expectedContext);
+
             done();
           });
       });
