@@ -2411,28 +2411,6 @@ module.exports = function(dataSource, should) {
             done();
           });
       });
-      /* TODO: add support for option.notify = false for all methods; adding
-        support just for replaceOrCreate is not enough and make the logic 
-        inconsistent; in other words, if the non-atomic workaound is used
-        where we call `save`, `create` or `replaceById`, these methods trigger
-        hooks even though you may have `option.notify = false`, while in atomic
-        version `option.notify` will do work; so I'm proposing to create a task 
-        to change all of them together to have consistent logic and write test
-        cases for all scenarios. I also prefer to revert back this commit 
-        since this provides just partial support for `option.notify = false`
-        which is just for atomic implementation
-      */
-      it.skip('triggers `loaded` hook on create', function(done) {
-        TestModel.observe('loaded', pushContextAndNext());
-
-        TestModel.replaceOrCreate(
-          { id: 'new-id', name: 'a name' }, {notify: false},
-          function(err, instance) {
-            if (err) return done(err);
-            observedContexts.should.eql("hook not called");
-            done();
-          });
-      });
 
       it('triggers `loaded` hook on replace', function(done) {
         TestModel.observe('loaded', pushContextAndNext());
