@@ -1472,14 +1472,14 @@ module.exports = function(dataSource, should) {
         });
       });
       
-      it('applies updates from `persist` hook', function(done) {
+      it('applies delete from `persist` hook', function(done) {
         TestModel.observe('persist', pushContextAndNext(function(ctx){
-          ctx.data.extra = 'hook data';
+          delete ctx.data.extra;
         }));
 
         existingInstance.replaceAttributes({ name: 'changed' }, function(err, instance) {
           if (err) return done(err);
-          instance.should.have.property('extra', 'hook data');
+          instance.should.not.have.property('extra', 'hook data');
           done();
         });
       });      
@@ -2217,7 +2217,7 @@ module.exports = function(dataSource, should) {
           });
       });
       
-      it('triggers `before save` hook', function(done) {
+      it('triggers `before save` hookon create', function(done) {
         TestModel.observe('before save', pushContextAndNext());
         TestModel.replaceOrCreate({id: existingInstance.id, name: 'new name'},
         function(err, instance) {
@@ -2254,7 +2254,7 @@ module.exports = function(dataSource, should) {
               }));
             } else {
               // non-atomic implementation of `replaceOrCreate`
-              // will use `prototype.replaceById` internally
+              // will use `replaceById` internally
               observedContexts.should.eql(aTestModelCtx({
                 instance: {
                   id: existingInstance.id,
