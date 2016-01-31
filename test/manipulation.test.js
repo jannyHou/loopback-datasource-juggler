@@ -756,9 +756,7 @@ describe('manipulation', function () {
   });
 
   describe('replaceAttributes', function() {
-    
     var person;
-
     before(function (done) {
       Person.destroyAll(function () {
         Person.create({name: 'Mary', age: 15}, function(err, p) {
