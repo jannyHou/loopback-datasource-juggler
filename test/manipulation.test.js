@@ -688,6 +688,133 @@ describe('manipulation', function () {
     });
   });
 
+  describe('replaceOrCreate', function() {
+    it('without options on create (promise variant)', function(done) {
+      Person.replaceOrCreate({ name: 'Jane', gender: 'female' })
+      .then(function(p) {
+        should.exist(p);
+        p.should.be.instanceOf(Person);
+        p.name.should.equal('Jane');
+        p.gender.should.equal('female');
+        return Person.findById(p.id)
+        .then(function (p) {
+          p.name.should.equal('Jane');
+          p.gender.should.equal('female');
+          done();
+        });
+      })
+      .catch(done);
+    });
+    
+    it('with options on update (promise variant)', function(done) {
+      Person.create({name:'John', gender: 'male'})
+        .then(function(created) {
+          var data = {id: created.id, name:'James'};
+          return Person.replaceOrCreate(data, {validate: false})
+          .then(function(p) {
+            should.exist(p);
+            p.should.be.instanceOf(Person);
+            p.name.should.equal('James');
+            return Person.findById(p.id)
+            .then(function (p) {
+              p.name.should.equal('James');
+              p.should.have.property('gender', undefined);
+              done();
+            });
+          });
+        })
+      .catch(done);
+    }); 
+    
+    it('with options and callback on update', function(done) {
+      Person.create({ name: 'John' }, function(err, created) {
+        if (err) return done(err);
+        var data = { id: created.id, name: 'James' };
+        Person.replaceOrCreate(data, {validate: false}, function(err, replaced) {
+          if (err) return done(err);
+          replaced.name.should.equal('James');
+          Person.findById(created.id, function (err, found) {
+            if (err) return done(err);
+            found.name.should.equal('James');
+            done();
+          });
+        });
+      });
+    });
+    
+    it('without options and callback on create', function(done) {
+      Person.replaceOrCreate({name: 'John'}, function(err, created) {
+        if (err) return done(err);
+        created.name.should.equal('John');
+        Person.findById(created.id, function(err, found) {
+          if (err) return done(err);
+          found.name.should.equal('John');
+          done();
+        });
+      });
+    });
+  });
+
+  describe('replaceAttributes', function() {
+    
+    var person;
+
+    before(function (done) {
+      Person.destroyAll(function () {
+        Person.create({name: 'Mary', age: 15}, function(err, p) {
+          if (err) return done(err);
+          person = p;
+          done();
+        });
+      });
+    });    
+    
+    it('without options(promise variant)', function(done) {
+      Person.findById(person.id)
+      .then(function(p){
+
+        p.replaceAttributes({name: 'Jane', gender: 'female' })
+        .then(function(p) {
+          should.exist(p);
+          p.should.be.instanceOf(Person);
+          p.name.should.equal('Jane');
+          p.gender.should.equal('female');
+          should.not.exist(p.age);
+          return Person.findById(p.id)
+          .then(function (p) {
+            p.name.should.equal('Jane');
+            p.gender.should.equal('female');
+            p.should.have.property('age', undefined);
+            done();
+          });
+        })
+      })
+      .catch(done);
+    });
+    
+    it('with options(promise variant)', function(done) {
+      Person.findById(person.id)
+      .then(function(p){
+        p.replaceAttributes({name: 'Jane', gender: 'female' }, {validate: false})
+        .then(function(p) {
+          should.exist(p);
+          p.should.be.instanceOf(Person);
+          p.name.should.equal('Jane');
+          p.gender.should.equal('female');
+          should.not.exist(p.age);
+          return Person.findById(p.id)
+          .then(function (p) {
+            p.name.should.equal('Jane');
+            p.gender.should.equal('female');
+            p.should.have.property('age', undefined);
+            done();
+          });
+        });
+      })
+      .catch(done);
+    });
+  });
+
   describe('findOrCreate', function() {
     it('should create a record with if new', function(done) {
       Person.findOrCreate({ name: 'Zed', gender: 'male' },
