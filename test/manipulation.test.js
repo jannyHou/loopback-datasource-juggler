@@ -688,72 +688,220 @@ describe('manipulation', function () {
     });
   });
 
-  describe('replaceOrCreate', function() {
-    it('without options on create (promise variant)', function(done) {
-      Person.replaceOrCreate({ name: 'Jane', gender: 'female' })
-      .then(function(p) {
-        should.exist(p);
-        p.should.be.instanceOf(Person);
-        p.name.should.equal('Jane');
-        p.gender.should.equal('female');
-        return Person.findById(p.id)
-        .then(function (p) {
-          p.name.should.equal('Jane');
-          p.gender.should.equal('female');
-          done();
+  if (!getSchema().connector.replaceOrCreate) {
+    describe.skip('replaceOrCreate - not implemented', function(done) { done; });
+  } else {
+    describe('replaceOrCreate', function() {
+      var Post;
+      var ds = getSchema();
+      before(function() {
+        Post = ds.define('Post', {
+          title: { type: String, length: 255, index: true },
+          content: { type: String },
+          comments: [String]
         });
-      })
-      .catch(done);
-    });
-    
-    it('with options on update (promise variant)', function(done) {
-      Person.create({name:'John', gender: 'male'})
-        .then(function(created) {
-          var data = {id: created.id, name:'James'};
-          return Person.replaceOrCreate(data, {validate: false})
-          .then(function(p) {
-            should.exist(p);
-            p.should.be.instanceOf(Person);
-            p.name.should.equal('James');
-            return Person.findById(p.id)
-            .then(function (p) {
-              p.name.should.equal('James');
-              p.should.have.property('gender', undefined);
-              done();
-            });
+      });
+
+      it('without options on create (promise variant)', function(done) {
+        var post = {id: 123, title: 'a', content: 'AAA'};
+        Post.replaceOrCreate(post)
+        .then(function(p) {
+          should.exist(p);
+          p.should.be.instanceOf(Post);
+          p.id.should.be.equal(post.id);
+          p.should.not.have.property('_id');
+          p.title.should.equal(post.title);          
+          p.content.should.equal(post.content);
+          return Post.findById(p.id)
+          .then(function (p) {
+            p.id.should.equal(post.id);
+            p.id.should.not.have.property('_id');
+            p.title.should.equal(p.title);
+            p.content.should.equal(p.content);
+            done();
           });
         })
-      .catch(done);
-    }); 
-    
-    it('with options and callback on update', function(done) {
-      Person.create({ name: 'John' }, function(err, created) {
-        if (err) return done(err);
-        var data = { id: created.id, name: 'James' };
-        Person.replaceOrCreate(data, {validate: false}, function(err, replaced) {
-          if (err) return done(err);
-          replaced.name.should.equal('James');
-          Person.findById(created.id, function (err, found) {
+        .catch(done);
+      });
+
+      it('with options on create (promise variant)', function(done) {
+        var post = {id: 123, title: 'a', content: 'AAA'};
+        Post.replaceOrCreate(post, {validate: false})
+        .then(function(p) {
+          should.exist(p);
+          p.should.be.instanceOf(Post);
+          p.id.should.be.equal(post.id);
+          p.should.not.have.property('_id');
+          p.title.should.equal(post.title);          
+          p.content.should.equal(post.content);
+          return Post.findById(p.id)
+          .then(function (p) {
+            p.id.should.equal(post.id);
+            p.id.should.not.have.property('_id');
+            p.title.should.equal(p.title);
+            p.content.should.equal(p.content);
+            done();
+          });
+        })
+        .catch(done);
+      });
+
+      it('without options on update (promise variant)', function(done) {
+        var post = {title: 'a', content: 'AAA', comments: ['Comment1']};
+        Post.create(post)
+          .then(function(created) {
+            created = created.toObject();
+            delete created.comments;
+            delete created.content;
+            created.title = 'b';
+            return Post.replaceOrCreate(created)
+            .then(function(p) {
+              should.exist(p);
+              p.should.be.instanceOf(Post);
+              p.id.should.equal(created.id);
+              p.should.not.have.property('_id');
+              p.title.should.equal('b');
+              p.should.not.have.property(p.content);
+              p.should.not.have.property(p.comments);
+              return Post.findById(created.id)
+              .then(function (p) {
+                p.should.not.have.property('_id');
+                p.title.should.equal('b');
+                p.should.have.property('content', undefined);
+                p.should.have.property('comments', undefined);
+                done();
+              });
+            });
+          })
+        .catch(done);
+      });
+      
+      it('with options on update (promise variant)', function(done) {
+        var post = {title: 'a', content: 'AAA', comments: ['Comment1']};
+        Post.create(post)
+          .then(function(created) {
+            created = created.toObject();
+            delete created.comments;
+            delete created.content;
+            created.title = 'b';
+            return Post.replaceOrCreate(created, {validate: false})
+            .then(function(p) {
+              should.exist(p);
+              p.should.be.instanceOf(Post);
+              p.id.should.equal(created.id);
+              p.should.not.have.property('_id');
+              p.title.should.equal('b');
+              p.should.not.have.property(p.content);
+              p.should.not.have.property(p.comments);
+              return Post.findById(created.id)
+              .then(function (p) {
+                p.should.not.have.property('_id');
+                p.title.should.equal('b');
+                p.should.have.property('content', undefined);
+                p.should.have.property('comments', undefined);
+                done();
+              });
+            });
+          })
+        .catch(done);
+      });
+      
+      it('without options on update (callback variant)', function(done) {
+        Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
+          function(err, post) {
             if (err) return done(err);
-            found.name.should.equal('James');
+            post = post.toObject();
+            delete post.comments;
+            delete post.content;
+            post.title = 'b';
+            Post.replaceOrCreate(post, function(err, p) {
+              if (err) return done(err);
+              p.id.should.equal(post.id);
+              p.should.not.have.property('_id');
+              p.title.should.equal('b');
+              p.should.not.have.property(p.content);
+              p.should.not.have.property(p.comments);
+              Post.findById(post.id, function(err, p) {
+                if (err) return done(err);
+                p.id.should.equal(post.id);
+                p.should.not.have.property('_id');
+                p.title.should.equal('b');
+                p.should.have.property('content', undefined);
+                p.should.have.property('comments', undefined);
+                done();
+              });
+            });
+          });
+      });
+
+      it('with options on update (callback variant)', function(done) {
+        Post.create({title: 'a', content: 'AAA', comments: ['Comment1']},
+          {validate: false},
+          function(err, post) {
+            if (err) return done(err);
+            post = post.toObject();
+            delete post.comments;
+            delete post.content;
+            post.title = 'b';
+            Post.replaceOrCreate(post, function(err, p) {
+              if (err) return done(err);
+              p.id.should.equal(post.id);
+              p.should.not.have.property('_id');
+              p.title.should.equal('b');
+              p.should.not.have.property(p.content);
+              p.should.not.have.property(p.comments);
+              Post.findById(post.id, function(err, p) {
+                if (err) return done(err);
+                p.id.should.equal(post.id);
+                p.should.not.have.property('_id');
+                p.title.should.equal('b');
+                p.should.have.property('content', undefined);
+                p.should.have.property('comments', undefined);
+                done();
+              });
+            });
+          });
+      });
+
+      it('without options on create (callback variant)', function(done) {
+        var post = {id: 123, title: 'a', content: 'AAA'};
+        Post.replaceOrCreate(post, function(err, p) {
+          if (err) return done(err);
+          p.id.should.equal(post.id);
+          p.should.not.have.property('_id');
+          p.title.should.equal(post.title);
+          p.content.should.equal(post.content);
+          Post.findById(p.id, function(err, p) {
+            if (err) return done(err);
+            p.id.should.equal(post.id);
+            p.should.not.have.property('_id');
+            p.title.should.equal(post.title);
+            p.content.should.equal(post.content);
+            done();
+          });
+        });
+      });
+
+      it('with options on create (callback variant)', function(done) {
+        var post = {id: 123, title: 'a', content: 'AAA'};
+        Post.replaceOrCreate(post, {validate: false}, function (err, p) {
+          if (err) return done(err);
+          p.id.should.equal(post.id);
+          p.should.not.have.property('_id');
+          p.title.should.equal(post.title);
+          p.content.should.equal(post.content);
+          Post.findById(p.id, function(err, p) {
+            if (err) return done(err);
+            p.id.should.equal(post.id);
+            p.should.not.have.property('_id');
+            p.title.should.equal(post.title);
+            p.content.should.equal(post.content);
             done();
           });
         });
       });
     });
-    
-    it('without options and callback on create', function(done) {
-      Person.replaceOrCreate({name: 'John'}, function(err, created) {
-        if (err) return done(err);
-        created.name.should.equal('John');
-        Person.findById(created.id, function(err, found) {
-          if (err) return done(err);
-          found.name.should.equal('John');
-          done();
-        });
-      });
-    });
-  });
+  }
 
   describe('replaceAttributes', function() {
     var person;
