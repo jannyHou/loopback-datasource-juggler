@@ -1442,7 +1442,7 @@ module.exports = function(dataSource, should) {
             instance.toObject(true).should.eql({
               id: existingInstance.id,
               name: 'hooked',
-              extra: null
+              extra: undefined
             });
             done();
           });
