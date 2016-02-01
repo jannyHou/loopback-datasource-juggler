@@ -1419,7 +1419,7 @@ module.exports = function(dataSource, should) {
         });
       });
 
-      it.skip('applies updates from `before save` hook', function(done) {
+      it('applies updates from `before save` hook', function(done) {
         /* Should they be able to change `instance` in `before save`? I was completely on the wrong track? :(
          * in line [1] data is over writting instance!
          * Also in line [2] I was copying `data` to `inst`
@@ -1442,7 +1442,7 @@ module.exports = function(dataSource, should) {
             instance.toObject(true).should.eql({
               id: existingInstance.id,
               name: 'hooked',
-              extra: undefined
+              extra: null
             });
             done();
           });
