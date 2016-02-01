@@ -1420,17 +1420,9 @@ module.exports = function(dataSource, should) {
       });
 
       it('applies updates from `before save` hook', function(done) {
-        /* Should they be able to change `instance` in `before save`? I was completely on the wrong track? :(
-         * in line [1] data is over writting instance!
-         * Also in line [2] I was copying `data` to `inst`
-         * Could you please clarify if in `before save` for `replaceAttributes` they are allowed to change instance? 
-         * 
-         * [1]:https://github.com/strongloop/loopback-datasource-juggler/pull/788/files#diff-d717a01e40d8164976e4468af1bce663R2678
-         * [2]:https://github.com/strongloop/loopback-datasource-juggler/pull/788/files#diff-d717a01e40d8164976e4468af1bce663R2707
-        */
-
         TestModel.observe('before save', function(ctx, next) {
-          ctx.instance.name = 'hooked';
+          ctx.instance.extra = 'extra data';
+          ctx.instance.name = 'hooked name';
           next();
         });
 
@@ -1441,14 +1433,24 @@ module.exports = function(dataSource, should) {
             should.exists(instance);
             instance.toObject(true).should.eql({
               id: existingInstance.id,
-              name: 'hooked',
-              extra: undefined
+              name: 'hooked name',
+              extra: 'extra data'
             });
             done();
           });
         });
-      });      
+      });
 
+      it('validates model after `before save` hook', function(done) {
+        TestModel.observe('before save', invalidateTestModel());
+
+        existingInstance.replaceAttributes({ name: 'updated' }, function(err) {
+          (err || {}).should.be.instanceOf(ValidationError);
+          (err.details.codes || {}).should.eql({ name: ['presence'] });
+          done();
+        });
+      });
+      
       it('triggers `persist` hook', function(done) {
         TestModel.observe('persist', pushContextAndNext());
         existingInstance.replaceAttributes({ name: 'replacedName' }, function(err) {
