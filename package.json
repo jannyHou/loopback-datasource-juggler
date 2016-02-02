@@ -1,6 +1,6 @@
 {
   "name": "loopback-datasource-juggler",
-  "version": "2.44.0",
+  "version": "2.44.23",
   "description": "LoopBack DataSoure Juggler",
   "keywords": [
     "StrongLoop",
@@ -31,7 +31,7 @@
   "devDependencies": {
     "bluebird": "^2.9.9",
     "mocha": "^2.1.0",
-    "should": "^5.0.0"
+    "should": "^8.0.2"
   },
   "dependencies": {
     "async": "~1.0.0",
@@ -44,46 +44,31 @@
     "traverse": "^0.6.6"
   },
   "license": "MIT",
-  "gitHead": "1e9bbd27873077ef374ea5487121a70173757364",
+  "readmeFilename": "README.md",
+  "gitHead": "8ca67c3d48952b972bc2e2c1ee4c8c93b389f99c",
   "bugs": {
     "url": "https://github.com/strongloop/loopback-datasource-juggler/issues"
   },
   "homepage": "https://github.com/strongloop/loopback-datasource-juggler#readme",
-  "_id": "loopback-datasource-juggler@2.44.0",
-  "_shasum": "045b312f364b6f7ec2d6c5452acd6b8350b13a24",
-  "_from": "loopback-datasource-juggler@2.44.0",
-  "_npmVersion": "3.5.1",
-  "_nodeVersion": "0.10.40",
+  "_id": "loopback-datasource-juggler@2.44.23",
+  "_shasum": "3c8099f8eb6beeba9f43a75fb4d6feadcb61348d",
+  "_from": "loopback-datasource-juggler@2.44.23",
+  "_npmVersion": "2.14.14",
+  "_nodeVersion": "0.10.41",
   "_npmUser": {
-    "name": "rfeng",
-    "email": "enjoyjava@gmail.com"
+    "name": "admin",
+    "email": "admin@strongloop.com"
   },
   "maintainers": [
     {
-      "name": "rfeng",
-      "email": "enjoyjava@gmail.com"
-    },
-    {
-      "name": "ritch",
-      "email": "skawful@gmail.com"
-    },
-    {
-      "name": "schoonology",
-      "email": "michael.r.schoonmaker@gmail.com"
-    },
-    {
-      "name": "strongloop",
-      "email": "callback@strongloop.com"
-    },
-    {
-      "name": "bajtos",
-      "email": "miro.bajtos@gmail.com"
+      "name": "admin",
+      "email": "admin@strongloop.com"
     }
   ],
   "dist": {
-    "shasum": "045b312f364b6f7ec2d6c5452acd6b8350b13a24",
-    "tarball": "http://ci.strongloop.com:4873/loopback-datasource-juggler/-/loopback-datasource-juggler-2.44.0.tgz"
+    "shasum": "3c8099f8eb6beeba9f43a75fb4d6feadcb61348d",
+    "tarball": "http://ci.strongloop.com:4873/loopback-datasource-juggler/-/loopback-datasource-juggler-2.44.23.tgz"
   },
-  "directories": {},
-  "_resolved": "http://ci.strongloop.com:4873/loopback-datasource-juggler/-/loopback-datasource-juggler-2.44.0.tgz"
+  "_resolved": "http://ci.strongloop.com:4873/loopback-datasource-juggler/-/loopback-datasource-juggler-2.44.23.tgz",
+  "readme": "ERROR: No README data found!"
 }

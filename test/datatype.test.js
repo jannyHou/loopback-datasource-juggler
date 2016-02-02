@@ -96,7 +96,7 @@ describe('datatypes', function () {
 
   });
 
-  it('should respect data types when updating attributes', function (done) {
+  it.only('should respect data types when updating attributes', function (done) {
     var d = new Date, id;
 
     Model.create({
